@@ -1,24 +1,65 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { getConnection, Like } from 'typeorm';
 import { UserDetails } from '../entities/user-details.entity';
 import { UserResident } from '../entities/user-resident.entity';
 import { User } from '../entities/user.entity';
-import { CreateUserPostData } from './user.validation';
+import { CreateUserPostData, UpdateUserPostData } from './user.validation';
 
 @Injectable()
 export class UserService {
-  findAll() {
-    return [
-      {
-        name: 'Diogo Mainardes',
-      },
-      {
-        name: 'Michele Ambrosio (Mozao)',
-      },
-    ];
-  }
+  findAll = async (query: any) => {
+    const userRepository = getConnection().getRepository(User);
+    if (query.filter) {
+      const users = await userRepository.find({
+        where: [
+          {
+            name: Like(`%${query.filter}%`),
+          },
+          {
+            email: Like(`%${query.filter}%`),
+          },
+          {
+            document: Like(`%${query.filter}%`),
+          },
+        ],
+        relations: ['details', 'resident'],
+      });
+
+      return users.map((user) => {
+        user.password = undefined;
+        return user;
+      });
+    }
+
+    const users = await userRepository.find({
+      relations: ['details', 'resident'],
+    });
+
+    return users.map((user) => {
+      user.password = undefined;
+      return user;
+    });
+  };
 
   find = async (id: number) => {
     const user = await User.findOne(id);
+    const details = await UserDetails.findOne({ user_id: id });
+    const resident = await UserResident.findOne({ user_id: id });
+    return {
+      ...user,
+      details: {
+        ...details,
+        what_sports: details.what_sports.split(','),
+      },
+      resident,
+      password: undefined,
+    };
+  };
+
+  toggleAdmin = async (id: string) => {
+    const user = await User.findOne(id);
+    user.is_admin = !user.is_admin;
+    await user.save();
     return { ...user, password: undefined };
   };
 
@@ -40,74 +81,74 @@ export class UserService {
     if (existDocument)
       throw new HttpException('CPF já cadastrado', HttpStatus.BAD_REQUEST);
 
-    const resident = await UserResident.create(newUser.resident);
-    const details = await UserDetails.create(newUser.details);
-    const user = await User.create({ ...newUser });
+    const user = new User();
+    const resident = new UserResident();
+    const details = new UserDetails();
 
-    user.birthDate = newUser.birth_date;
-    user.emergencyPhone = newUser.emergency_phone;
-    user.isAdmin = false;
+    user.name = newUser.name;
     user.document = newUser.document.replace(/[.-]/gi, '').trim();
+    user.gender = newUser.gender;
+    user.phone = newUser.phone;
+    user.register = newUser.register;
+    user.email = newUser.email;
+    user.birth_date = newUser.birth_date;
+    user.password = newUser.password ? newUser.password : user.password;
+    user.emergency_phone = newUser.emergency_phone;
 
-    await user.save();
-
-    resident.userId = details.userId = user.id;
-
-    resident.howManyCars = newUser.resident.how_many_cars;
-    resident.howManyChildren = newUser.resident.how_many_children;
-    resident.howManyFamilyMembers = newUser.resident.how_many_family_members;
-    resident.howMuchTime = newUser.resident.how_much_time;
-    resident.haveChildren = newUser.resident.have_children;
-    resident.eachChildrenAge = newUser.resident.each_children_age.join(',');
+    resident.how_many_cars = newUser.resident.how_many_cars;
+    resident.how_many_children = newUser.resident.how_many_children;
+    resident.how_many_family_members = newUser.resident.how_many_family_members;
+    resident.how_much_time = newUser.resident.how_much_time;
+    resident.have_children = newUser.resident.have_children;
+    resident.each_children_age = newUser.resident.each_children_age;
+    resident.address = newUser.resident.address;
+    resident.type = newUser.resident.type;
+    resident.user = user;
 
     details.sports = newUser.details.sports;
-    details.whatSports = newUser.details.what_sports.join(',');
-    details.anotherSports = newUser.details.another_sports || '';
+    details.what_sports = newUser.details.what_sports.join(',');
+    details.another_sport = newUser.details.another_sport || '';
+    details.user = user;
 
-    resident.save();
-    details.save();
+    await user.save();
+    await resident.save();
+    await details.save();
 
     return { ...user, password: undefined };
   }
 
-  async update(id: number, updateData: CreateUserPostData) {
-    const user = await User.findOne(id);
+  async update(id: number, updateData: UpdateUserPostData) {
+    const userRepo = await getConnection().getRepository(User);
+    const user = await userRepo.findOne(id, {
+      relations: ['resident', 'details'],
+    });
     if (!user)
       throw new HttpException('Usuário não encontrado', HttpStatus.BAD_REQUEST);
-
-    const resident = await UserResident.findOne({ userId: id });
-    const details = await UserDetails.findOne({ userId: id });
-
-    const residentUpdate = !resident ? await UserResident.create() : resident;
-    const detailsUpdate = !details ? await UserDetails.create() : details;
-
-    residentUpdate.userId = detailsUpdate.userId = user.id;
 
     user.name = updateData.name;
     user.gender = updateData.gender;
     user.phone = updateData.phone;
     user.register = updateData.register;
     user.email = updateData.email;
-    user.birthDate = updateData.birth_date;
-    user.emergencyPhone = updateData.emergency_phone;
+    user.birth_date = updateData.birth_date;
+    user.password = updateData.password ? updateData.password : user.password;
+    user.emergency_phone = updateData.emergency_phone;
 
-    await user.save();
+    user.resident.how_many_cars = updateData.resident.how_many_cars;
+    user.resident.how_many_children = updateData.resident.how_many_children;
+    user.resident.how_many_family_members =
+      updateData.resident.how_many_family_members;
+    user.resident.how_much_time = updateData.resident.how_much_time;
+    user.resident.have_children = updateData.resident.have_children;
+    user.resident.each_children_age = updateData.resident.each_children_age;
+    user.resident.address = updateData.resident.address;
+    user.resident.type = updateData.resident.type;
 
-    residentUpdate.howManyCars = updateData.resident.how_many_cars;
-    residentUpdate.howManyChildren = updateData.resident.how_many_children;
-    residentUpdate.howManyFamilyMembers = updateData.resident.how_many_family_members;
-    residentUpdate.howMuchTime = updateData.resident.how_much_time;
-    residentUpdate.haveChildren = updateData.resident.have_children;
-    residentUpdate.eachChildrenAge = updateData.resident.each_children_age.join(',');
-    residentUpdate.address = updateData.resident.address;
-    residentUpdate.type = updateData.resident.type;
+    user.details.sports = updateData.details.sports;
+    user.details.what_sports = updateData.details.what_sports.join(',');
+    user.details.another_sport = updateData.details.another_sport || '';
 
-    detailsUpdate.sports = updateData.details.sports;
-    detailsUpdate.whatSports = updateData.details.what_sports.join(',');
-    detailsUpdate.anotherSports = updateData.details.another_sports || '';
-
-    await residentUpdate.save();
-    await detailsUpdate.save();
+    await userRepo.save(user);
 
     return { ...user, password: undefined };
   }

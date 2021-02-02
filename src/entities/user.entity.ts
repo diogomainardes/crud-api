@@ -7,6 +7,7 @@ import {
   DeleteDateColumn,
   OneToMany,
   BaseEntity,
+  OneToOne,
 } from 'typeorm';
 import { UserDetails } from './user-details.entity';
 import { UserResident } from './user-resident.entity';
@@ -24,10 +25,8 @@ export class User extends BaseEntity {
   })
   gender: string;
 
-  @Column({
-    name: 'birth_date',
-  })
-  birthDate: Date;
+  @Column()
+  birth_date: Date;
 
   @Column()
   document: string;
@@ -38,10 +37,8 @@ export class User extends BaseEntity {
   @Column()
   phone: string;
 
-  @Column({
-    name: 'emergency_phone',
-  })
-  emergencyPhone: string;
+  @Column()
+  emergency_phone: string;
 
   @Column()
   email: string;
@@ -59,14 +56,17 @@ export class User extends BaseEntity {
   deleted_at: Date;
 
   @Column({
-    name: 'is_admin',
     default: false,
   })
-  isAdmin: boolean;
+  is_admin: boolean;
 
-  @OneToMany((type) => UserResident, (resident) => resident.userId)
+  @OneToOne((type) => UserResident, (resident) => resident.user, {
+    cascade: ['update'],
+  })
   resident: UserResident;
 
-  @OneToMany((type) => UserDetails, (details) => details.userId)
+  @OneToOne((type) => UserDetails, (details) => details.user, {
+    cascade: ['update'],
+  })
   details: UserDetails;
 }

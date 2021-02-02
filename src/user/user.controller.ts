@@ -9,12 +9,17 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from './user.service';
-import { CheckDocumentUserData, CreateUserPostData } from './user.validation';
+import {
+  CheckDocumentUserData,
+  CreateUserPostData,
+  UpdateUserPostData,
+} from './user.validation';
 
 @Controller('user')
 export class UserController {
@@ -22,8 +27,8 @@ export class UserController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get('/')
-  findAll() {
-    return this.userService.findAll();
+  findAll(@Query() query) {
+    return this.userService.findAll(query);
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -45,8 +50,14 @@ export class UserController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get(':id')
-  find(@Param() params) {
-    return this.userService.find(params.id);
+  find(@Request() req, @Param() params) {
+    if (req.user.role == 'admin' || req.user.id == params.id) {
+      return this.userService.find(params.id);
+    }
+    throw new HttpException(
+      'Sem autorização para este comando',
+      HttpStatus.UNAUTHORIZED,
+    );
   }
 
   @Post('')
@@ -56,10 +67,33 @@ export class UserController {
   }
 
   @UseGuards(AuthGuard('jwt'))
+  @Put(':id/toggle-admin')
+  async setAdmin(@Request() req, @Param() params) {
+    if (req.user.role == 'admin') {
+      const user = await this.userService.toggleAdmin(params.id);
+      return user;
+    }
+    throw new HttpException(
+      'Sem autorização para este comando',
+      HttpStatus.UNAUTHORIZED,
+    );
+  }
+
+  @UseGuards(AuthGuard('jwt'))
   @Put(':id')
-  async update(@Param() params, @Body() body: CreateUserPostData) {
-    const user = await this.userService.update(params.id, body);
-    return user;
+  async update(
+    @Request() req,
+    @Param() params,
+    @Body() body: UpdateUserPostData,
+  ) {
+    if (req.user.role == 'admin' || req.user.id == params.id) {
+      const user = await this.userService.update(params.id, body);
+      return user;
+    }
+    throw new HttpException(
+      'Sem autorização para este comando',
+      HttpStatus.UNAUTHORIZED,
+    );
   }
 
   @UseGuards(AuthGuard('jwt'))

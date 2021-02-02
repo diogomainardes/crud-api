@@ -1,10 +1,11 @@
+import { Optional } from '@nestjs/common';
 import { Type } from 'class-transformer';
 import {
-  IsDateString,
   IsDefined,
   IsEmail,
   IsNotEmpty,
   IsOptional,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { IsOnlyDate } from 'src/shared/only-date.validator';
@@ -31,8 +32,9 @@ export class CreateUserResident {
   @IsNotEmpty({ message: "Campo 'Quantos filhos' obrigatório" })
   how_many_children: number;
 
+  @ValidateIf((o) => o.have_children)
   @IsNotEmpty({ message: "Campo 'Idade d cada filho' obrigatório" })
-  each_children_age: number[];
+  each_children_age: string;
 }
 
 export class CreateUserDetails {
@@ -43,7 +45,7 @@ export class CreateUserDetails {
   what_sports: string[];
 
   @IsOptional()
-  another_sports: string;
+  another_sport: string;
 }
 
 export class CheckDocumentUserData {
@@ -60,6 +62,53 @@ export class CreateUserPostData {
 
   @IsNotEmpty({ message: 'Campo RG obrigatório' })
   register: string;
+
+  @IsNotEmpty({ message: 'Campo Nome obrigatório' })
+  name: string;
+
+  @IsNotEmpty({ message: 'Campo Sexo obrigatório' })
+  gender: string;
+
+  @IsEmail({}, { message: 'Campo Email deve conter um email válido' })
+  @IsNotEmpty({ message: 'Campo Email obrigatório' })
+  email: string;
+
+  @IsOnlyDate({
+    message: 'Campo Data de nascimento deve ser válida',
+  })
+  @IsNotEmpty({
+    message: 'Campo Data de nascimento deve conter uma data válida',
+  })
+  birth_date: Date;
+
+  @IsNotEmpty({ message: 'Campo Telefone obrigatório' })
+  phone: string;
+
+  @IsNotEmpty({ message: 'Campo Telefone de emergência obrigatório' })
+  emergency_phone: string;
+
+  @ValidateNested()
+  @IsNotEmpty({ message: 'Campo Residência obrigatório' })
+  @Type(() => CreateUserResident)
+  @IsDefined()
+  resident: CreateUserResident;
+
+  @ValidateNested()
+  @IsNotEmpty({ message: 'Campo Detalhes obrigatório' })
+  @IsDefined()
+  @Type(() => CreateUserDetails)
+  details: CreateUserDetails;
+}
+
+export class UpdateUserPostData {
+  @IsNotEmpty({ message: 'Campo Documento obrigatório' })
+  document: string;
+
+  @IsNotEmpty({ message: 'Campo RG obrigatório' })
+  register: string;
+
+  @Optional()
+  password: string;
 
   @IsNotEmpty({ message: 'Campo Nome obrigatório' })
   name: string;

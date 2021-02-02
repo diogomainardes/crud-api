@@ -1,26 +1,33 @@
-import { Entity, Column, PrimaryGeneratedColumn, BaseEntity } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  BaseEntity,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
+import { User } from './user.entity';
 
 @Entity()
 export class UserDetails extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({
-    name: 'user_id',
-  })
-  userId: number;
+  @Column()
+  user_id: number;
 
   @Column()
   sports: boolean;
 
   @Column({
-    name: 'what_sports',
     nullable: true,
   })
-  whatSports: string;
+  what_sports: string;
 
-  @Column({
-    name: 'another_sport',
-  })
-  anotherSports: string;
+  @Column()
+  another_sport: string;
+
+  @OneToOne((type) => User, (user) => user.details)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 }

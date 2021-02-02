@@ -20,7 +20,7 @@ export class AuthService {
   doLogin = async (username: string, password: string): Promise<any> => {
     const user = await this.usersService.findByDocument(username);
     if (user && user.password === password) {
-      const role = user.isAdmin ? 'admin' : 'user';
+      const role = user.is_admin ? 'admin' : 'user';
       return {
         token: this.jwtService.sign({
           sub: user.id,

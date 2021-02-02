@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, BaseEntity } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  BaseEntity,
+  JoinColumn,
+  OneToOne,
+} from 'typeorm';
+import { User } from './user.entity';
 
 @Entity()
 export class UserResident extends BaseEntity {
@@ -8,7 +16,7 @@ export class UserResident extends BaseEntity {
   @Column({
     name: 'user_id',
   })
-  userId: number;
+  user_id: number;
 
   @Column()
   address: string;
@@ -18,33 +26,25 @@ export class UserResident extends BaseEntity {
   })
   type: string;
 
-  @Column({
-    name: 'how_much_time',
-  })
-  howMuchTime: number;
+  @Column()
+  how_much_time: number;
 
-  @Column({
-    name: 'how_many_cars',
-  })
-  howManyCars: number;
+  @Column()
+  how_many_cars: number;
 
-  @Column({
-    name: 'how_many_family_members',
-  })
-  howManyFamilyMembers: number;
+  @Column()
+  how_many_family_members: number;
 
-  @Column({
-    name: 'have_children',
-  })
-  haveChildren: boolean;
+  @Column()
+  have_children: boolean;
 
-  @Column({
-    name: 'how_many_children',
-  })
-  howManyChildren: number;
+  @Column()
+  how_many_children: number;
 
-  @Column({
-    name: 'each_children_age',
-  })
-  eachChildrenAge: string;
+  @Column()
+  each_children_age: string;
+
+  @OneToOne((type) => User, (user) => user.resident)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 }
