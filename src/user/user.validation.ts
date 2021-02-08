@@ -146,3 +146,8 @@ export class UpdateUserPostData {
   @Type(() => CreateUserDetails)
   details: CreateUserDetails;
 }
+
+export class UpdatePasswordPostData {
+  @IsNotEmpty({ message: 'Campo Password obrigatório' })
+  password: string;
+}

@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { getConnection, Like } from 'typeorm';
+import { getConnection, Like, MoreThan } from 'typeorm';
 import { UserDetails } from '../entities/user-details.entity';
 import { UserResident } from '../entities/user-resident.entity';
 import { User } from '../entities/user.entity';
@@ -65,6 +65,28 @@ export class UserService {
 
   findByDocument = async (document: string) => {
     const user = await User.findOne({ document });
+    return user;
+  };
+
+  findByResetToken = async (token: string) => {
+    const user = await User.findOne({
+      where: {
+        password_reset_token: token,
+        password_reset_token_expire: MoreThan(new Date()),
+      },
+    });
+    return user;
+  };
+
+  updatePassword = async (id: number, newPass: string) => {
+    const user = await User.findOne(id);
+    if (!user)
+      throw new HttpException('Usuário não encontrado', HttpStatus.BAD_REQUEST);
+
+    user.password_reset_token = '';
+    user.password = newPass;
+    await user.save();
+
     return user;
   };
 

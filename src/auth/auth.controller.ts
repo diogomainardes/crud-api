@@ -1,6 +1,19 @@
-import { Body, Controller, HttpCode, Logger, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { UpdatePasswordPostData } from 'src/user/user.validation';
 import { AuthService } from './auth.service';
-import { LoginPostData, ResendPostData } from './auth.validation';
+import {
+  CheckTokenPostData,
+  LoginPostData,
+  ResendPostData,
+} from './auth.validation';
 
 @Controller('auth')
 export class AuthController {
@@ -18,6 +31,18 @@ export class AuthController {
   @Post('resend')
   @HttpCode(200)
   resend(@Body() body: ResendPostData): any {
-    return this.authService.resend(body);
+    return this.authService.resend(body.document);
+  }
+
+  @Post('check-token')
+  @HttpCode(200)
+  checkToken(@Body() body: CheckTokenPostData): any {
+    return this.authService.checkTokenResetPassword(body.token);
+  }
+
+  @UseGuards(AuthGuard('jwt-temporary'))
+  @Post('reset-password')
+  async resetPassword(@Request() req, @Body() body: UpdatePasswordPostData) {
+    return await this.authService.resetPassword(req.user.id, body.password);
   }
 }

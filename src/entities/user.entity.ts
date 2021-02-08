@@ -60,6 +60,16 @@ export class User extends BaseEntity {
   })
   is_admin: boolean;
 
+  @Column({
+    default: null,
+  })
+  password_reset_token: string;
+
+  @Column({
+    default: null,
+  })
+  password_reset_token_expire: Date;
+
   @OneToOne((type) => UserResident, (resident) => resident.user, {
     cascade: ['update'],
   })

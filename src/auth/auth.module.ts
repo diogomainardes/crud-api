@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { JwtModule, JwtService } from '@nestjs/jwt';
-import { EmailService } from 'src/email/email.service';
-import { UserController } from '../user/user.controller';
-import { UserService } from '../user/user.service';
+import { JwtModule } from '@nestjs/jwt';
+import { EmailModule } from 'src/email/email.module';
+import { UserService } from 'src/user/user.service';
 import { AuthController } from './auth.controller';
+import { JwtTemporaryStrategy } from './auth.jwt-temporary.strategy';
 import { JwtStrategy } from './auth.jwt.strategy';
 import { LocalStrategy } from './auth.local.strategy';
 import { AuthService } from './auth.service';
@@ -14,14 +14,16 @@ import { AuthService } from './auth.service';
       secret: '123',
       signOptions: { expiresIn: '60m' },
     }),
+    EmailModule,
   ],
-  controllers: [AuthController, UserController],
+  controllers: [AuthController],
   providers: [
     AuthService,
-    EmailService,
     UserService,
     LocalStrategy,
     JwtStrategy,
+    JwtTemporaryStrategy,
   ],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

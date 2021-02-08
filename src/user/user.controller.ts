@@ -19,6 +19,7 @@ import {
   CheckDocumentUserData,
   CreateUserPostData,
   UpdateUserPostData,
+  UpdatePasswordPostData,
 } from './user.validation';
 
 @Controller('user')

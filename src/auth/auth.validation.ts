@@ -12,3 +12,8 @@ export class ResendPostData {
   @IsNotEmpty({ message: 'Campo Documento obrigatório' })
   document: string;
 }
+
+export class CheckTokenPostData {
+  @IsNotEmpty({ message: 'Campo Token obrigatório' })
+  token: string;
+}
