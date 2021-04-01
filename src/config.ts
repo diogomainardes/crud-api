@@ -7,3 +7,5 @@ export const IS_DEV = process.env.IS_DEV || false;
 export const BASE_URL = IS_DEV
   ? 'http://localhost:3000/'
   : 'http://www.associacaovillageipanema.com.br/';
+
+export const SALT_HASH = 'villageipanema';

@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { hash } from 'bcrypt';
 import { addMinutes } from 'date-fns';
 import * as md5 from 'md5';
+import { SALT_HASH } from 'src/config';
 import { EmailService } from 'src/email/email.service';
 import { UserService } from '../user/user.service';
 
@@ -21,7 +22,7 @@ export class AuthService {
 
   doLogin = async (username: string, password: string): Promise<any> => {
     const user = await this.usersService.findByDocument(username);
-    if (user && user.password === password) {
+    if (user && user.password === md5(await hash(password, SALT_HASH))) {
       const role = user.is_admin ? 'admin' : 'user';
       return {
         token: this.jwtService.sign({

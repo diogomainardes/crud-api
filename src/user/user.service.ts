@@ -1,4 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { hash } from 'bcrypt';
+import md5 from 'md5';
+import { SALT_HASH } from 'src/config';
 import { getConnection, Like, MoreThan } from 'typeorm';
 import { UserDetails } from '../entities/user-details.entity';
 import { UserResident } from '../entities/user-resident.entity';
@@ -84,7 +87,7 @@ export class UserService {
       throw new HttpException('Usuário não encontrado', HttpStatus.BAD_REQUEST);
 
     user.password_reset_token = '';
-    user.password = newPass;
+    user.password = md5(await hash(newPass, SALT_HASH));
     await user.save();
 
     return user;
@@ -115,6 +118,7 @@ export class UserService {
     user.email = newUser.email;
     user.birth_date = newUser.birth_date;
     user.password = newUser.password ? newUser.password : user.password;
+    user.password = md5(await hash(user.password, SALT_HASH));
     user.emergency_phone = newUser.emergency_phone;
 
     resident.how_many_cars = newUser.resident.how_many_cars;
@@ -154,6 +158,7 @@ export class UserService {
     user.email = updateData.email;
     user.birth_date = updateData.birth_date;
     user.password = updateData.password ? updateData.password : user.password;
+    user.password = md5(await hash(user.password, SALT_HASH));
     user.emergency_phone = updateData.emergency_phone;
 
     user.resident.how_many_cars = updateData.resident.how_many_cars;
